@@ -1,17 +1,16 @@
-FROM golang:1.14
+FROM public.ecr.aws/zeet/lambdahandler:v0.2.0 as build
 
-WORKDIR /app
+RUN yum install -y golang
+RUN go env -w GOPROXY=direct
 
-COPY go.mod go.sum ./
+ADD go.mod go.sum ./
 
 RUN go mod download
+ADD . .
 
-COPY . .
+RUN go build -o /main
 
-RUN go build
-
-EXPOSE 8080
-
-ENV GIN_MODE=release
-
-CMD ./golang-demo
+FROM public.ecr.aws/zeet/lambdahandler:v0.2.0
+ENV BIN main
+COPY --from=build /$BIN /$BIN
+ENTRYPOINT [ "/main" ]  
